@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berlin Mobility Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #04080f;
+  --panel: #080d16;
+  --panel2: #0b1220;
+  --border: #1a2535;
+  --border2: #243044;
+  --blue: #00aaff;
+  --cyan: #00e5cc;
+  --yellow: #ffd000;
+  --red: #ff4455;
+  --green: #00e676;
+  --text: #c8d8f0;
+  --muted: #4a6080;
+  --dim: #2a3a50;
+  --glow: rgba(0,170,255,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SCANLINE overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* TOP BAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 3px;
+  color: var(--blue);
+  text-shadow: 0 0 20px rgba(0,170,255,0.5);
+}
+
+.logo span { color: var(--cyan); }
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.08em;
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 1.5s infinite;
+  box-shadow: 0 0 6px var(--green);
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.topbar-center {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+#live-clock {
+  font-size: 20px;
+  color: var(--text);
+  letter-spacing: 2px;
+  display: block;
+}
+
+#live-date {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.topbar-right {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.alert-badge {
+  background: rgba(255,68,85,0.15);
+  border: 1px solid rgba(255,68,85,0.4);
+  color: var(--red);
+  padding: 4px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  animation: alertPulse 2s infinite;
+}
+
+@keyframes alertPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,68,85,0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(255,68,85,0); }
+}
+
+.weather-info {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  padding: 0 24px;
+}
+
+.tab {
+  padding: 12px 24px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.tab:hover:not(.active) { color: var(--text); }
+
+/* MAIN LAYOUT */
+.dashboard {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.view { display: none; }
+.view.active { display: flex; flex-direction: column; gap: 16px; }
+
+/* KPI ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--blue);
+  opacity: 0.6;
+}
+
+.kpi.warn::before { background: var(--yellow); }
+.kpi.alert::before { background: var(--red); }
+.kpi.good::before { background: var(--green); }
+.kpi.cyan::before { background: var(--cyan); }
+
+.kpi-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.kpi-value.blue { color: var(--blue); text-shadow: 0 0 20px rgba(0,170,255,0.4); }
+.kpi-value.yellow { color: var(--yellow); text-shadow: 0 0 20px rgba(255,208,0,0.4); }
+.kpi-value.red { color: var(--red); text-shadow: 0 0 20px rgba(255,68,85,0.4); }
+.kpi-value.green { color: var(--green); text-shadow: 0 0 20px rgba(0,230,118,0.4); }
+.kpi-value.cyan { color: var(--cyan); text-shadow: 0 0 20px rgba(0,229,204,0.4); }
+
+.kpi-delta {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.kpi-delta.up { color: var(--green); }
+.kpi-delta.down { color: var(--red); }
+
+/* GRID LAYOUTS */
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3b { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* PANEL */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+
+.panel-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 2px 8px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.panel-badge.live {
+  border-color: rgba(0,230,118,0.4);
+  color: var(--green);
+  background: rgba(0,230,118,0.05);
+}
+
+/* CHART WRAPPER */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* MAP PANEL */
+.map-panel {
+  height: 340px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.map-svg-wrap {
+  width: 100%;
+  height: 100%;
+}
+
+/* ROUTE LIST */
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.route-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+  cursor: default;
+}
+
+.route-item:hover { border-color: var(--blue); }
+
+.route-line {
+  width: 28px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.route-name { flex: 1; font-size: 12px; color: var(--text); }
+
+.route-bar-wrap {
+  width: 80px;
+  height: 4px;
+  background: var(--dim);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.route-bar { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+.route-pct {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  width: 32px;
+  text-align: right;
+}
+
+/* INCIDENT TABLE */
+.incident-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.incident-table th {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.incident-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.incident-table tr:last-child td { border-bottom: none; }
+.incident-table tr:hover td { background: rgba(0,170,255,0.03); }
+
+.sev-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.badge {
+  padding: 2px 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+}
+
+.badge-high { background: rgba(255,68,85,0.15); color: var(--red); border: 1px solid rgba(255,68,85,0.3); }
+.badge-med { background: rgba(255,208,0,0.1); color: var(--yellow); border: 1px solid rgba(255,208,0,0.3); }
+.badge-low { background: rgba(0,230,118,0.08); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+
+/* HEATMAP GRID */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 2px;
+}
+
+.heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heatmap-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  transition: transform 0.1s;
+  cursor: pointer;
+}
+
+.heatmap-cell:hover { transform: scale(1.3); z-index: 10; position: relative; }
+
+.heatmap-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.heatmap-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+.heatmap-row-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 8px;
+  justify-content: space-between;
+}
+
+.heatmap-row-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.heatmap-wrap { display: flex; }
+
+/* GAUGE */
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.gauge-svg { overflow: visible; }
+
+/* TICKER */
+.ticker-wrap {
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  padding: 8px 24px;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ticker-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+.ticker-track {
+  overflow: hidden;
+  flex: 1;
+}
+
+.ticker-inner {
+  display: flex;
+  gap: 48px;
+  animation: ticker 30s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ticker-item .val { color: var(--text); }
+.ticker-item .pos { color: var(--green); }
+.ticker-item .neg { color: var(--red); }
+
+/* MINI SPARKLINE */
+.sparkline-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spark-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.spark-item:last-child { border-bottom: none; }
+
+.spark-label { width: 100px; font-size: 11px; color: var(--text); flex-shrink: 0; }
+.spark-canvas-wrap { flex: 1; height: 28px; }
+.spark-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  width: 50px;
+  text-align: right;
+}
+
+/* CONGESTION BARS */
+.cong-list { display: flex; flex-direction: column; gap: 10px; }
+
+.cong-item { display: flex; flex-direction: column; gap: 4px; }
+.cong-header { display: flex; justify-content: space-between; font-size: 11px; }
+.cong-name { color: var(--text); }
+.cong-speed {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cong-bar-bg {
+  height: 6px;
+  background: var(--dim);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cong-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1.5s ease;
+}
+
+/* LEGEND */
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* TOOLTIP */
+.tooltip-box {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  padding: 8px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 9000;
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-3b { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 700px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-3b { grid-template-columns: 1fr; }
+  .tabs { overflow-x: auto; }
+  .heatmap-grid { grid-template-columns: repeat(12, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="tooltip-box" id="tooltip"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">BERLIN<span>FLOW</span></div>
+    <div class="system-status">
+      <span class="status-dot"></span>
+      SYSTEM ONLINE
+    </div>
+  </div>
+  <div class="topbar-center">
+    <span id="live-clock">00:00:00</span>
+    <span id="live-date"></span>
+  </div>
+  <div class="topbar-right">
+    <div class="weather-info" id="weather">⏳ Loading weather…</div>
+    <div class="alert-badge">⚠ 3 ACTIVE INCIDENTS</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="tab" onclick="switchTab('transit')">Public Transit</div>
+  <div class="tab" onclick="switchTab('roads')">Road Network</div>
+  <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+  <!-- ===== OVERVIEW TAB ===== -->
+  <div class="view active" id="view-overview">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi blue">
+        <div class="kpi-label">Vehicles Active</div>
+        <div class="kpi-value blue" id="kpi-vehicles">24,871</div>
+        <div class="kpi-delta up" id="kpi-vehicles-d">↑ 3.2% vs yesterday</div>
+      </div>
+      <div class="kpi good">
+        <div class="kpi-label">Avg Speed (km/h)</div>
+        <div class="kpi-value green" id="kpi-speed">38</div>
+        <div class="kpi-delta up" id="kpi-speed-d">↑ 5 km/h vs 1hr ago</div>
+      </div>
+      <div class="kpi warn">
+        <div class="kpi-label">Congestion Index</div>
+        <div class="kpi-value yellow" id="kpi-cong">62</div>
+        <div class="kpi-delta down">↑ HIGH — peak hours</div>
+      </div>
+      <div class="kpi cyan">
+        <div class="kpi-label">Transit Passengers</div>
+        <div class="kpi-value cyan" id="kpi-passengers">312K</div>
+        <div class="kpi-delta up">↑ 8.1% vs last week</div>
+      </div>
+      <div class="kpi alert">
+        <div class="kpi-label">Active Incidents</div>
+        <div class="kpi-value red" id="kpi-incidents">3</div>
+        <div class="kpi-delta down">↓ 2 resolved in last hr</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid-3">
+      <!-- Traffic Flow Chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Traffic Flow — Today vs Yesterday</span>
+          <span class="panel-badge live">LIVE</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-flow"></canvas>
+        </div>
+        <div class="legend" style="margin-top:12px">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Today</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div>Yesterday</div>
+        </div>
+      </div>
+
+      <!-- Modal Split -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Modal Split</span>
+          <span class="panel-badge">LIVE</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-modal"></canvas>
+        </div>
+      </div>
+
+      <!-- Speed Gauge -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Network Speed</span>
+          <span class="panel-badge live">LIVE</span>
+        </div>
+        <div class="gauge-wrap" style="padding-top:8px">
+          <svg class="gauge-svg" width="160" height="100" viewBox="0 0 160 100">
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#ff4455"/>
+                <stop offset="50%" style="stop-color:#ffd000"/>
+                <stop offset="100%" style="stop-color:#00e676"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <path d="M 10 90 A 70 70 0 0 1 150 90" fill="none" stroke="#1a2535" stroke-width="10" stroke-linecap="round"/>
+            <!-- Fill -->
+            <path id="gauge-arc" d="M 10 90 A 70 70 0 0 1 150 90" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="80"/>
+            <!-- Needle -->
+            <g id="gauge-needle" style="transform-origin: 80px 90px; transform: rotate(-30deg)">
+              <line x1="80" y1="90" x2="80" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+              <circle cx="80" cy="90" r="5" fill="white" opacity="0.9"/>
+            </g>
+            <text x="80" y="78" text-anchor="middle" font-family="Bebas Neue" font-size="28" fill="var(--text)" id="gauge-text">38</text>
+            <text x="80" y="88" text-anchor="middle" font-family="Space Mono" font-size="7" fill="var(--muted)">KM/H</text>
+            <text x="12" y="100" font-family="Space Mono" font-size="7" fill="var(--muted)">0</text>
+            <text x="138" y="100" font-family="Space Mono" font-size="7" fill="var(--muted)">80</text>
+          </svg>
+          <div style="text-align:center; margin-top:8px">
+            <div style="font-family:'Space Mono',monospace; font-size:10px; color:var(--muted)">Avg Network Speed</div>
+            <div style="font-family:'Space Mono',monospace; font-size:10px; color:var(--yellow); margin-top:4px">⚠ Below optimal (45 km/h)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECOND ROW -->
+    <div class="grid-2">
+      <!-- Congestion by District -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Congestion by District</span>
+          <span class="panel-badge">BERLIN BEZIRKE</span>
+        </div>
+        <div class="cong-list" id="cong-list"></div>
+      </div>
+
+      <!-- Live Incidents -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Active Incidents</span>
+          <span class="panel-badge live">LIVE FEED</span>
+        </div>
+        <table class="incident-table" id="incident-table">
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TRANSIT TAB ===== -->
+  <div class="view" id="view-transit">
+
+    <div class="kpi-row">
+      <div class="kpi blue">
+        <div class="kpi-label">S-Bahn Lines Active</div>
+        <div class="kpi-value blue">16</div>
+        <div class="kpi-delta">of 16 — full service</div>
+      </div>
+      <div class="kpi cyan">
+        <div class="kpi-label">U-Bahn Lines Active</div>
+        <div class="kpi-value cyan">10</div>
+        <div class="kpi-delta">of 10 — full service</div>
+      </div>
+      <div class="kpi warn">
+        <div class="kpi-label">Avg Delay (min)</div>
+        <div class="kpi-value yellow" id="kpi-delay">2.4</div>
+        <div class="kpi-delta down">↑ 0.8 vs target</div>
+      </div>
+      <div class="kpi good">
+        <div class="kpi-label">On-Time Rate</div>
+        <div class="kpi-value green">87%</div>
+        <div class="kpi-delta up">↑ 2% vs last week</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Passengers Today</div>
+        <div class="kpi-value" id="kpi-pass-today">312K</div>
+        <div class="kpi-delta up">of est. 380K</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <!-- Line occupancy -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Passenger Volume by Hour</span>
+          <span class="panel-badge live">TODAY</span>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chart-passengers"></canvas>
+        </div>
+      </div>
+
+      <!-- U-Bahn occupancy -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">U-Bahn Occupancy</span>
+          <span class="panel-badge">LIVE</span>
+        </div>
+        <div class="route-list" id="ubahn-list"></div>
+      </div>
+
+      <!-- S-Bahn occupancy -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">S-Bahn Occupancy</span>
+          <span class="panel-badge">LIVE</span>
+        </div>
+        <div class="route-list" id="sbahn-list"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Delay Distribution</span>
+          <span class="panel-badge">LAST 24H</span>
+        </div>
+        <div class="chart-wrap" style="height:180px">
+          <canvas id="chart-delays"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Cancelled / Disrupted Services</span>
+          <span class="panel-badge">TODAY</span>
+        </div>
+        <div class="sparkline-row" id="disruption-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== ROADS TAB ===== -->
+  <div class="view" id="view-roads">
+
+    <div class="kpi-row">
+      <div class="kpi blue">
+        <div class="kpi-label">Monitored Roads</div>
+        <div class="kpi-value blue">1,842</div>
+        <div class="kpi-delta">segments tracked</div>
+      </div>
+      <div class="kpi good">
+        <div class="kpi-label">Free Flow Segments</div>
+        <div class="kpi-value green">68%</div>
+        <div class="kpi-delta up">1,252 of 1,842</div>
+      </div>
+      <div class="kpi warn">
+        <div class="kpi-label">Slow Segments</div>
+        <div class="kpi-value yellow">24%</div>
+        <div class="kpi-delta">442 segments</div>
+      </div>
+      <div class="kpi alert">
+        <div class="kpi-label">Congested Segments</div>
+        <div class="kpi-value red">8%</div>
+        <div class="kpi-delta down">148 segments</div>
+      </div>
+      <div class="kpi cyan">
+        <div class="kpi-label">Avg Wait Time</div>
+        <div class="kpi-value cyan">7.2</div>
+        <div class="kpi-delta">minutes at junctions</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Hourly Congestion Index</span>
+          <span class="panel-badge live">LIVE</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-congestion-road"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Speed by Road Type</span>
+          <span class="panel-badge">KM/H</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-speed-type"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Major Corridor Status</span>
+        <span class="panel-badge">REAL-TIME</span>
+      </div>
+      <div class="cong-list" id="corridor-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ===== ANALYTICS TAB ===== -->
+  <div class="view" id="view-analytics">
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Weekly Traffic Volume</span>
+          <span class="panel-badge">7-DAY</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-weekly"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Incident Types Breakdown</span>
+          <span class="panel-badge">THIS MONTH</span>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-incidents-type"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEATMAP -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Congestion Heatmap — Hour × Day of Week</span>
+        <span class="panel-badge">HISTORICAL</span>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:8px; margin-top:4px">
+        <div class="heatmap-row-labels" id="heatmap-row-labels"></div>
+        <div style="flex:1">
+          <div class="heatmap-grid" id="heatmap"></div>
+          <div class="heatmap-labels" id="heatmap-col-labels"></div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:16px">
+        <span style="font-family:'Space Mono',monospace; font-size:9px; color:var(--muted)">LOW</span>
+        <div style="flex:1; height:6px; border-radius:3px; background: linear-gradient(to right, #0b1220, #00aaff, #ffd000, #ff4455)"></div>
+        <span style="font-family:'Space Mono',monospace; font-size:9px; color:var(--muted)">HIGH</span>
+      </div>
+    </div>
+
+    <div class="grid-3b">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Modal Trend (Monthly)</span>
+          <span class="panel-badge">6M</span>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-modal-trend"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Emission Index</span>
+          <span class="panel-badge">CO₂ g/km</span>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-emission"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Peak Hour Traffic</span>
+          <span class="panel-badge">AM / PM</span>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-peak"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <span class="ticker-label">LIVE FEED</span>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="ticker"></div>
+  </div>
+</div>
+
+<script>
+// ─── CHART DEFAULTS ───────────────────────────────────────
+Chart.defaults.color = '#4a6080';
+Chart.defaults.borderColor = '#1a2535';
+Chart.defaults.font.family = "'Space Mono', monospace";
+Chart.defaults.font.size = 9;
+
+const C = {
+  blue: '#00aaff', cyan: '#00e5cc', yellow: '#ffd000',
+  red: '#ff4455', green: '#00e676', dim: '#1a2535',
+  muted: '#4a6080', text: '#c8d8f0'
+};
+
+// ─── CLOCK ────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('live-clock').textContent =
+    now.toLocaleTimeString('en-GB', { hour12: false });
+  document.getElementById('live-date').textContent =
+    now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── TABS ─────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['overview','transit','roads','analytics'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+// ─── HOURS LABELS ─────────────────────────────────────────
+const hours = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+const currentHour = new Date().getHours();
+
+// ─── TRAFFIC PROFILE ──────────────────────────────────────
+function trafficProfile(offset = 0) {
+  return hours.map((_, i) => {
+    const base = [2,1.5,1.2,1,1.2,2.5,5,8,9.5,8,6.5,6,7,6.5,6,6.5,8,9,8.5,7,5.5,4.5,3.5,2.5];
+    return Math.max(0, base[i] + offset + (Math.random()-0.5)*0.5);
+  });
+}
+
+// ─── CHART: TRAFFIC FLOW ──────────────────────────────────
+new Chart(document.getElementById('chart-flow'), {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [
+      {
+        label: 'Today',
+        data: trafficProfile(0),
+        borderColor: C.blue,
+        backgroundColor: 'rgba(0,170,255,0.08)',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'Yesterday',
+        data: trafficProfile(-0.5),
+        borderColor: C.dim,
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        borderDash: [4,4],
+        tension: 0.4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#111820' }, ticks: { maxTicksLimit: 8, color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted }, title: { display: true, text: 'Vehicles (×1000)', color: C.muted, font: { size: 8 } } }
+    }
+  }
+});
+
+// ─── CHART: MODAL SPLIT ───────────────────────────────────
+new Chart(document.getElementById('chart-modal'), {
+  type: 'doughnut',
+  data: {
+    labels: ['U-Bahn/S-Bahn', 'Bus/Tram', 'Car', 'Cycling', 'Walking', 'Other'],
+    datasets: [{
+      data: [32, 18, 28, 10, 9, 3],
+      backgroundColor: [C.blue, C.cyan, C.yellow, C.green, '#a855f7', C.muted],
+      borderColor: '#04080f',
+      borderWidth: 3,
+      hoverBorderWidth: 3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 8, padding: 12, color: C.text, font: { size: 10 } } }
+    }
+  }
+});
+
+// ─── CONGESTION LIST ──────────────────────────────────────
+const districts = [
+  { name: 'Mitte', val: 78, color: C.red },
+  { name: 'Prenzlauer Berg', val: 65, color: C.yellow },
+  { name: 'Friedrichshain', val: 58, color: C.yellow },
+  { name: 'Charlottenburg', val: 71, color: C.red },
+  { name: 'Kreuzberg', val: 55, color: C.yellow },
+  { name: 'Tempelhof', val: 38, color: C.green },
+  { name: 'Steglitz', val: 32, color: C.green },
+];
+
+function renderCongList() {
+  const el = document.getElementById('cong-list');
+  el.innerHTML = districts.map(d => `
+    <div class="cong-item">
+      <div class="cong-header">
+        <span class="cong-name">${d.name}</span>
+        <span class="cong-speed" style="color:${d.color}">${d.val}%</span>
+      </div>
+      <div class="cong-bar-bg">
+        <div class="cong-bar" style="width:${d.val}%; background:${d.color}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+renderCongList();
+
+// ─── INCIDENT TABLE ───────────────────────────────────────
+const incidents = [
+  { loc: 'A100 · Tempelhof', type: 'Accident', sev: 'HIGH', time: '14:32' },
+  { loc: 'Alexanderplatz', type: 'Road Works', sev: 'MEDIUM', time: '09:15' },
+  { loc: 'Potsdamer Platz', type: 'Event Crowd', sev: 'MEDIUM', time: '13:44' },
+];
+
+function renderIncidents() {
+  const tbody = document.querySelector('#incident-table tbody');
+  const sevClass = { HIGH: 'badge-high', MEDIUM: 'badge-med', LOW: 'badge-low' };
+  const sevCol = { HIGH: C.red, MEDIUM: C.yellow, LOW: C.green };
+  tbody.innerHTML = incidents.map(i => `
+    <tr>
+      <td><span class="sev-dot" style="background:${sevCol[i.sev]}"></span>${i.loc}</td>
+      <td>${i.type}</td>
+      <td><span class="badge ${sevClass[i.sev]}">${i.sev}</span></td>
+      <td style="font-family:'Space Mono',monospace; color:var(--muted)">${i.time}</td>
+    </tr>
+  `).join('');
+}
+renderIncidents();
+
+// ─── TRANSIT: PASSENGERS ──────────────────────────────────
+new Chart(document.getElementById('chart-passengers'), {
+  type: 'bar',
+  data: {
+    labels: hours.filter((_,i) => i <= currentHour + 1),
+    datasets: [{
+      label: 'Passengers',
+      data: trafficProfile(0).slice(0, currentHour + 2).map(v => Math.round(v * 14000)),
+      backgroundColor: hours.map((_,i) => i <= currentHour ? 'rgba(0,170,255,0.7)' : 'rgba(0,170,255,0.15)').slice(0, currentHour + 2),
+      borderColor: 'transparent',
+      borderRadius: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxTicksLimit: 8, color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted } }
+    }
+  }
+});
+
+// ─── U-BAHN LIST ──────────────────────────────────────────
+const ubahnLines = [
+  { id: 'U1', name: 'Uhlandstr ↔ Warschauer', color: '#60a917', pct: 82 },
+  { id: 'U2', name: 'Pankow ↔ Ruhleben', color: '#da1e28', pct: 71 },
+  { id: 'U3', name: 'Krumme Lanke ↔ Warsch.', color: '#60a917', pct: 44 },
+  { id: 'U4', name: 'Innsbrucker Pl ↔ Nollen.', color: '#f9c500', pct: 38 },
+  { id: 'U5', name: 'Hauptbf ↔ Hönow', color: '#9c3d14', pct: 88 },
+  { id: 'U6', name: 'Alt-Tegel ↔ Alt-Mariend.', color: '#6a5acd', pct: 62 },
+];
+
+function renderRouteList(containerId, lines) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = lines.map(l => `
+    <div class="route-item">
+      <div class="route-line" style="background:${l.color}; color:white">${l.id}</div>
+      <div class="route-name">${l.name}</div>
+      <div class="route-bar-wrap"><div class="route-bar" style="width:${l.pct}%; background:${l.pct > 80 ? C.red : l.pct > 60 ? C.yellow : C.green}"></div></div>
+      <div class="route-pct" style="color:${l.pct > 80 ? C.red : l.pct > 60 ? C.yellow : C.green}">${l.pct}%</div>
+    </div>
+  `).join('');
+}
+renderRouteList('ubahn-list', ubahnLines);
+
+const sbahnLines = [
+  { id: 'S1', name: 'Oranienburg ↔ Wannsee', color: '#da1e28', pct: 74 },
+  { id: 'S3', name: 'Erkner ↔ Spandau', color: '#60a917', pct: 55 },
+  { id: 'S5', name: 'Strausberg ↔ Spandau', color: '#f9c500', pct: 61 },
+  { id: 'S7', name: 'Ahrensfelde ↔ Potsdam', color: '#f9c500', pct: 48 },
+  { id: 'S9', name: 'BER Airport ↔ Spandau', color: '#60a917', pct: 35 },
+  { id: 'S41', name: 'Ringbahn (clockwise)', color: '#f9c500', pct: 79 },
+];
+renderRouteList('sbahn-list', sbahnLines);
+
+// ─── DELAYS CHART ─────────────────────────────────────────
+new Chart(document.getElementById('chart-delays'), {
+  type: 'bar',
+  data: {
+    labels: ['On time', '1-3 min', '3-5 min', '5-10 min', '>10 min', 'Cancelled'],
+    datasets: [{
+      data: [87, 6, 3, 2, 1.5, 0.5],
+      backgroundColor: [C.green, C.cyan, C.blue, C.yellow, C.red, '#ff0066'],
+      borderRadius: 3,
+      borderColor: 'transparent'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted, callback: v => v + '%' } }
+    }
+  }
+});
+
+// ─── DISRUPTION LIST ──────────────────────────────────────
+const disruptions = [
+  { label: 'U5 — Techical fault', val: '3 trains' },
+  { label: 'S1 — Track work', val: '2 trains' },
+  { label: 'Bus 100 — Diversion', val: '5 stops' },
+  { label: 'Bus 200 — Delay', val: '+8 min' },
+];
+document.getElementById('disruption-list').innerHTML = disruptions.map(d => `
+  <div class="spark-item">
+    <div class="spark-label">${d.label}</div>
+    <div style="flex:1"></div>
+    <div class="spark-val">${d.val}</div>
+  </div>
+`).join('');
+
+// ─── ROADS: CONGESTION LINE ────────────────────────────────
+new Chart(document.getElementById('chart-congestion-road'), {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [{
+      label: 'Congestion Index',
+      data: [12,8,6,5,8,18,38,62,74,68,55,50,55,52,55,60,72,78,74,62,50,38,28,18],
+      borderColor: C.yellow,
+      backgroundColor: 'rgba(255,208,0,0.06)',
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: true,
+      tension: 0.4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#111820' }, ticks: { maxTicksLimit: 8, color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted }, min: 0, max: 100 }
+    }
+  }
+});
+
+// ─── SPEED BY ROAD TYPE ───────────────────────────────────
+new Chart(document.getElementById('chart-speed-type'), {
+  type: 'bar',
+  data: {
+    labels: ['Autobahn', 'Bundesstr.', 'City Roads', 'Residential', 'Cycle Lanes'],
+    datasets: [
+      { label: 'Current', data: [88, 52, 28, 18, 14], backgroundColor: C.blue, borderRadius: 3, borderColor: 'transparent' },
+      { label: 'Limit', data: [130, 70, 50, 30, 20], backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, borderColor: C.dim, borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { boxWidth: 8, color: C.text } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted, callback: v => v + ' km/h' } }
+    }
+  }
+});
+
+// ─── CORRIDOR LIST ────────────────────────────────────────
+const corridors = [
+  { name: 'A100 · Stadtautobahn', val: 88, speed: 22, color: C.red },
+  { name: 'B1 · Karl-Marx-Allee', val: 72, speed: 28, color: C.red },
+  { name: 'B2 · Landsberger Allee', val: 61, speed: 32, color: C.yellow },
+  { name: 'Kurfürstendamm', val: 55, speed: 24, color: C.yellow },
+  { name: 'Unter den Linden', val: 44, speed: 35, color: C.yellow },
+  { name: 'Tempelhofer Damm', val: 28, speed: 48, color: C.green },
+  { name: 'Berliner Str. (Steglitz)', val: 22, speed: 52, color: C.green },
+];
+document.getElementById('corridor-list').innerHTML = corridors.map(d => `
+  <div class="cong-item">
+    <div class="cong-header">
+      <span class="cong-name">${d.name}</span>
+      <span class="cong-speed" style="color:${d.color}">${d.speed} km/h · ${d.val}% congested</span>
+    </div>
+    <div class="cong-bar-bg">
+      <div class="cong-bar" style="width:${d.val}%; background:${d.color}"></div>
+    </div>
+  </div>
+`).join('');
+
+// ─── ANALYTICS: WEEKLY ────────────────────────────────────
+new Chart(document.getElementById('chart-weekly'), {
+  type: 'bar',
+  data: {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [{
+      label: 'Vehicles (×1000)',
+      data: [312, 328, 305, 340, 358, 198, 165],
+      backgroundColor: ['rgba(0,170,255,0.7)','rgba(0,170,255,0.7)','rgba(0,170,255,0.7)','rgba(0,170,255,0.7)','rgba(0,170,255,0.9)','rgba(0,229,204,0.5)','rgba(0,229,204,0.3)'],
+      borderRadius: 4,
+      borderColor: 'transparent'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted } }
+    }
+  }
+});
+
+// ─── INCIDENTS TYPE ───────────────────────────────────────
+new Chart(document.getElementById('chart-incidents-type'), {
+  type: 'polarArea',
+  data: {
+    labels: ['Accidents', 'Road Works', 'Events', 'Breakdowns', 'Weather', 'Other'],
+    datasets: [{
+      data: [34, 28, 18, 10, 6, 4],
+      backgroundColor: ['rgba(255,68,85,0.7)', 'rgba(255,208,0,0.7)', 'rgba(0,229,204,0.7)', 'rgba(0,170,255,0.7)', 'rgba(168,85,247,0.7)', 'rgba(74,96,128,0.7)'],
+      borderColor: '#04080f',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'right', labels: { boxWidth: 8, color: C.text } } },
+    scales: { r: { grid: { color: '#111820' }, ticks: { display: false } } }
+  }
+});
+
+// ─── HEATMAP ──────────────────────────────────────────────
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const heatProfile = [12,8,6,5,8,18,38,62,74,68,55,50,55,52,55,60,72,78,74,62,50,38,28,18];
+
+const heatmapEl = document.getElementById('heatmap');
+const rowLabels = document.getElementById('heatmap-row-labels');
+const colLabels = document.getElementById('heatmap-col-labels');
+
+// Row labels (days)
+rowLabels.innerHTML = days.map(d => `<div class="heatmap-row-label">${d}</div>`).join('');
+
+// Col labels (hours)
+colLabels.innerHTML = [0,6,12,18,23].map(h => `<div class="heatmap-label" style="flex:1;text-align:${h===0?'left':h===23?'right':'center'}">${String(h).padStart(2,'0')}h</div>`).join('');
+
+// Cells
+heatmapEl.innerHTML = Array.from({length:24}, (_,h) => {
+  return `<div class="heatmap-col">` + days.map((_, di) => {
+    const weekdayMult = di < 5 ? 1 : 0.5;
+    const val = heatProfile[h] * weekdayMult + (Math.random() * 8 - 4);
+    const clamped = Math.max(0, Math.min(100, val));
+    const r = Math.round(clamped / 100 * 255);
+    const g = Math.round((1 - clamped/100) * 100);
+    const b = Math.round((1 - clamped/100) * 200 + 30);
+    const bg = clamped < 20 ? `rgba(0,170,255,${clamped/100*0.8})` : clamped < 50 ? `rgba(255,208,0,${0.3 + clamped/200})` : `rgba(255,68,85,${0.3 + clamped/200})`;
+    const tooltip = `${days[di]} ${String(h).padStart(2,'0')}:00 — ${Math.round(clamped)}% congestion`;
+    return `<div class="heatmap-cell" style="background:${bg}" title="${tooltip}" onmouseenter="showTooltip(event,'${tooltip}')" onmouseleave="hideTooltip()"></div>`;
+  }).join('') + '</div>';
+}).join('');
+
+// ─── MODAL TREND ──────────────────────────────────────────
+new Chart(document.getElementById('chart-modal-trend'), {
+  type: 'line',
+  data: {
+    labels: ['Sep','Oct','Nov','Dec','Jan','Feb'],
+    datasets: [
+      { label: 'Transit', data: [29,30,30,31,32,32], borderColor: C.blue, backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, pointRadius: 3 },
+      { label: 'Car', data: [32,31,31,30,29,28], borderColor: C.yellow, backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, pointRadius: 3 },
+      { label: 'Cycling', data: [8,7,6,6,8,10], borderColor: C.green, backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, pointRadius: 3 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { boxWidth: 8, color: C.text } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted, callback: v => v + '%' } }
+    }
+  }
+});
+
+// ─── EMISSIONS ────────────────────────────────────────────
+new Chart(document.getElementById('chart-emission'), {
+  type: 'line',
+  data: {
+    labels: ['Sep','Oct','Nov','Dec','Jan','Feb'],
+    datasets: [{
+      label: 'CO₂ g/km',
+      data: [142,138,135,132,128,124],
+      borderColor: C.cyan,
+      backgroundColor: 'rgba(0,229,204,0.08)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2,
+      pointRadius: 3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: C.muted } },
+      y: { grid: { color: '#111820' }, ticks: { color: C.muted }, min: 110 }
+    }
+  }
+});
+
+// ─── PEAK HOURS ───────────────────────────────────────────
+new Chart(document.getElementById('chart-peak'), {
+  type: 'radar',
+  data: {
+    labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets: [
+      { label: 'AM Peak', data: [82,88,80,90,92,45,30], borderColor: C.blue, backgroundColor: 'rgba(0,170,255,0.1)', borderWidth: 2, pointRadius: 3 },
+      { label: 'PM Peak', data: [78,80,76,84,96,52,38], borderColor: C.red, backgroundColor: 'rgba(255,68,85,0.08)', borderWidth: 2, pointRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { boxWidth: 8, color: C.text } } },
+    scales: { r: { grid: { color: '#1a2535' }, pointLabels: { color: C.text, font: { size: 9 } }, ticks: { display: false } } }
+  }
+});
+
+// ─── TICKER ───────────────────────────────────────────────
+const tickerItems = [
+  '🔴 A100 Tempelhof — Accident · Expect 25min delay',
+  '🟡 U5 Hauptbahnhof — Technical fault · 3 trains cancelled',
+  '🟡 Alexanderplatz — Road works until 18:00',
+  '🟢 S-Bahn Ring — Full service restored at 13:45',
+  '🟡 Kurfürstendamm — Event traffic: Berlin Film Festival',
+  '🟢 Autobahn A9 — Cleared after earlier congestion',
+  '🔵 Weather: Light rain expected 16:00–20:00 — allow extra travel time',
+  '🟢 Tempelhofer Feld cycling lanes — All clear, good conditions',
+  '🔴 B1 Karl-Marx-Allee — Water main repair, single lane',
+];
+
+const ticker = document.getElementById('ticker');
+const doubled = [...tickerItems, ...tickerItems];
+ticker.innerHTML = doubled.map(item => `<span class="ticker-item"><span class="val">${item}</span></span>`).join('');
+
+// ─── TOOLTIP ──────────────────────────────────────────────
+const tooltipEl = document.getElementById('tooltip');
+function showTooltip(e, text) {
+  tooltipEl.textContent = text;
+  tooltipEl.style.display = 'block';
+  tooltipEl.style.left = (e.clientX + 12) + 'px';
+  tooltipEl.style.top = (e.clientY - 28) + 'px';
+}
+function hideTooltip() { tooltipEl.style.display = 'none'; }
+document.addEventListener('mousemove', e => {
+  if (tooltipEl.style.display !== 'none') {
+    tooltipEl.style.left = (e.clientX + 12) + 'px';
+    tooltipEl.style.top = (e.clientY - 28) + 'px';
+  }
+});
+
+// ─── LIVE KPI UPDATE ──────────────────────────────────────
+function jitter(base, range) { return Math.round(base + (Math.random()-0.5)*range); }
+setInterval(() => {
+  const speed = jitter(38, 6);
+  document.getElementById('kpi-speed').textContent = speed;
+  document.getElementById('kpi-vehicles').textContent = jitter(24871, 300).toLocaleString();
+  document.getElementById('kpi-delay').textContent = (2.4 + (Math.random()-0.5)*0.4).toFixed(1);
+
+  // Update gauge
+  const pct = speed / 80;
+  const offset = 220 - (220 * pct);
+  document.getElementById('gauge-arc').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('gauge-text').textContent = speed;
+  const rotation = -90 + (pct * 180);
+  document.getElementById('gauge-needle').style.transform = `rotate(${rotation}deg)`;
+}, 3000);
+
+// ─── REAL WEATHER — Open-Meteo (Berlin, no API key needed) ──
+const WMO_ICONS = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌦️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'🌨️',
+  77:'🌨️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  85:'🌨️', 86:'🌨️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️'
+};
+
+async function fetchWeather() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.405&current=temperature_2m,weathercode,windspeed_10m&timezone=Europe/Berlin&wind_speed_unit=kmh';
+    const res = await fetch(url);
+    const data = await res.json();
+    const cur = data.current;
+    const icon = WMO_ICONS[cur.weathercode] || '🌡️';
+    const temp = Math.round(cur.temperature_2m);
+    const wind = Math.round(cur.windspeed_10m);
+    document.getElementById('weather').textContent = `${icon} ${temp}°C · Wind ${wind} km/h`;
+  } catch(e) {
+    // silently keep last value if fetch fails
+  }
+}
+
+fetchWeather();
+setInterval(fetchWeather, 10 * 60 * 1000); // refresh every 10 min
+</script>
+</body>
+</html>
