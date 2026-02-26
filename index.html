@@ -17,15 +17,14 @@
   <ul class="nav-links">
     <li><a href="#experience">Experience</a></li>
     <li><a href="#projects">Projects</a></li>
-    <li><a href="#research">Research</a></li>
     <li><a href="#services">Services</a></li>
-    <li><a href="#skills">Skills</a></li>
+    <li><a href="#education">Education</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
 </nav>
 
 <!-- ===================== HERO ===================== -->
-<section class="hero" style="border-top:none; padding:0;">
+<section class="hero">
   <div class="hero-left">
     <div class="hero-tag">Available for opportunities</div>
     <h1 class="hero-name">George<br><em>Debrah</em></h1>
@@ -82,7 +81,7 @@
         <li>Designed REST API pipelines reducing data retrieval time by <span class="exp-highlight">1.8 seconds</span>.</li>
         <li>Built Power BI dashboards contributing to a <span class="exp-highlight">15% increase</span> in daily active users.</li>
         <li>Collaborated with engineers to reduce app crash rates by <span class="exp-highlight">30%</span>.</li>
-        <li>Implemented and customized <span class="exp-highlight">ERP systems</span> for the Finance and HR departments across four insurance companies, configuring finance modules to ensure <span class="exp-highlight">IFRS 17</span> compliance and streamline actuarial reporting processes.</li>
+        <li>Implemented and customized <span class="exp-highlight">ERP systems</span> for Finance and HR across four insurance companies, configuring modules for <span class="exp-highlight">IFRS 17</span> compliance.</li>
       </ul>
     </div>
 
@@ -131,7 +130,7 @@
   </div>
 
   <!-- Berlin Dashboard -->
-  <div class="fade-up" style="margin-bottom: 1px;">
+  <div class="fade-up">
     <div class="project-card">
       <div class="project-meta">
         <div class="project-label">Portfolio Project · 2025</div>
@@ -179,7 +178,7 @@
         </div>
       </div>
       <div class="project-content">
-        <p>Trained a YOLOv5 object detection model on 113,888 annotated traffic light images to intelligently detect and classify traffic conditions in Ghana. Paired the vision model with a Bee Colony Optimization algorithm to dynamically optimize traffic signal phasing, reducing average vehicle wait times in simulation by 32%.</p>
+        <p>Trained a YOLOv5 object detection model on 113,888 annotated traffic light images to detect and classify traffic conditions in Ghana. Paired with a Bee Colony Optimization algorithm to dynamically optimize signal phasing, reducing average vehicle wait times in simulation by 32%.</p>
         <div class="project-metrics">
           <div class="metric">
             <div class="metric-val">75.8%</div>
@@ -198,126 +197,22 @@
     </div>
   </div>
 
-</section>
-
-<!-- ===================== RESEARCH ===================== -->
-<section id="research">
-  <div class="section-header fade-up">
-    <span class="section-num">03 —</span>
-    <h2 class="section-title">Research</h2>
+  <!-- Research interest card -->
+  <div class="fade-up">
+    <div class="research-card">
+      <div class="research-card-label">Research Interest</div>
+      <p class="research-card-quote">How can ML and AI be applied not just to understand trade and logistics systems — but to actively optimize them, removing friction, predicting failure, and making supply chains smarter in real time?</p>
+      <p class="research-card-body">My research sits at the intersection of machine learning, combinatorial optimization, and operational intelligence — applied to trade and logistics, where inefficiency is costly and data is underutilized. The thesis above is the first proof of concept. Future directions include hybrid RL + metaheuristic solvers for freight routing, supply chain early-warning systems, and real-time data integration architectures for trade operations.</p>
+      <a href="mailto:georgenarteydebrah@gmail.com" class="research-card-link">Research inquiries → georgenarteydebrah@gmail.com</a>
+    </div>
   </div>
 
-  <div class="research-layout">
-
-    <!-- SIDEBAR -->
-    <div class="research-sidebar fade-up">
-      <p class="research-vision">
-        How can ML and AI be applied not just to understand trade and logistics systems — but to actively optimize them, removing friction, predicting failure, and making supply chains smarter in real time?
-      </p>
-      <p style="color: var(--muted); font-size: 13px; line-height: 1.8;">
-        My research interest lies at the intersection of machine learning, combinatorial optimization, and operational intelligence — applied to the trade and logistics industry, where inefficiency is costly, decisions are time-critical, and data is abundant but underutilized.
-      </p>
-      <div class="research-contact-chip">
-        Research inquiries: <span><a href="mailto:georgenarteydebrah@gmail.com">georgenarteydebrah@gmail.com</a></span>
-      </div>
-    </div>
-
-    <!-- BODY -->
-    <div class="research-body fade-up">
-
-      <!-- VISION -->
-      <div class="research-block">
-        <h3 class="research-block-title">Research Vision</h3>
-        <p>
-          Global trade and logistics networks are among the most complex optimization environments in existence — thousands of interdependent decisions made under uncertainty, across time zones, regulatory boundaries, and fluctuating demand. Yet most systems still rely on static rules and reactive planning. My research asks: <em class="research-kw">what becomes possible when ML and AI move from describing logistics problems to actively solving them?</em>
-        </p>
-        <p>
-          My undergraduate thesis — combining YOLOv5 object detection with Bee Colony Optimization to cut vehicle wait times by 32% in a dynamic traffic environment — is the clearest expression of this conviction. Traffic management and freight routing share the same mathematical DNA: both are real-time, multi-agent, combinatorially explosive problems where learned models and adaptive algorithms together outperform any fixed strategy. The thesis was a proof of concept. Logistics is the application at scale.
-        </p>
-        <p>
-          My long-term goal is to develop and deploy ML/AI systems inside real logistics and trade operations — in industry R&D settings where research translates directly into measurable throughput, cost reduction, and resilience improvements.
-        </p>
-      </div>
-
-      <!-- EXISTING RESEARCH -->
-      <div class="research-block">
-        <h3 class="research-block-title">Existing Research: Intelligent Traffic Optimization</h3>
-        <p>
-          My undergraduate thesis at Ashesi University produced a fully implemented intelligent traffic management system for Ghanaian urban intersections — one of the first studies to combine deep learning-based vehicle detection with a nature-inspired optimization algorithm in a sub-Saharan African road context.
-        </p>
-        <p>
-          I trained a <span class="research-kw">YOLOv5 object detection model</span> on 113,888 annotated traffic light images, achieving 75.8% mean average precision (mAP) on validation data. The detection model fed real-time vehicle counts into a <span class="research-kw">Bee Colony Optimization (BCO) algorithm</span> that dynamically adjusted signal phase timings across intersections — replacing fixed, pre-timed cycles with an adaptive system that responds to actual traffic load. The BCO solver achieved a lower optimal fitness value than baseline static schedules, corresponding to a <span class="research-kw">32% reduction in average vehicle wait time</span> and a 28% improvement in overall traffic flow efficiency in simulation, validated against real-world traffic datasets from Ghanaian intersections.
-        </p>
-        <p>
-          This work established three principles that now shape my broader research agenda: that <span class="research-kw">perception and optimization must be co-designed</span> rather than bolted together; that nature-inspired search algorithms are particularly well-suited to dynamic, high-dimensional scheduling problems; and that domain-specific datasets — not generic benchmarks — are essential for building systems that actually work in context. These principles translate directly into how I approach ML/AI applications for trade and logistics.
-        </p>
-        <div class="research-future">
-          <div class="research-future-label">Key outcomes</div>
-          <ul class="research-future-list">
-            <li>75.8% mAP on 113,888-image annotated traffic detection dataset</li>
-            <li>32% reduction in average vehicle wait time vs. static-timed baselines</li>
-            <li>28% improvement in traffic flow efficiency validated on real Ghanaian intersection data</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- DIRECTION 1 -->
-      <div class="research-block">
-        <h3 class="research-block-title">ML-Driven Route & Network Optimization</h3>
-        <p>
-          Classical vehicle routing and freight planning algorithms — TSP variants, column generation, branch-and-price — are powerful but brittle: they optimize for the world as modeled, not the world as it unfolds. Disruptions, port delays, carrier failures, and demand spikes break static plans immediately. My research explores how <span class="research-kw">reinforcement learning and predictive ML</span> can be integrated with optimization solvers to produce plans that are not just optimal at dispatch time, but dynamically re-optimized as conditions change.
-        </p>
-        <p>
-          Directly extending my thesis work, I am interested in how population-based metaheuristics — which proved highly effective for adaptive traffic signal phasing — can be adapted for multi-depot, multi-commodity freight routing under stochastic demand and real-time disruption signals. The goal is a planning system that learns from historical shipment data to anticipate bottlenecks before they materialize.
-        </p>
-        <div class="research-future">
-          <div class="research-future-label">Future directions</div>
-          <ul class="research-future-list">
-            <li>Hybrid RL + metaheuristic solvers for last-mile delivery under live traffic conditions</li>
-            <li>Disruption-aware re-routing triggered by predictive delay models</li>
-            <li>Multi-objective optimization balancing cost, carbon footprint, and delivery SLA simultaneously</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- DIRECTION 2 -->
-      <div class="research-block">
-        <h3 class="research-block-title">Predictive Analytics for Supply Chain Resilience</h3>
-        <p>
-          Supply chains fail quietly before they fail visibly — demand signals drift, supplier lead times shift, and inventory buffers erode gradually until a stockout or shipment crisis makes the problem undeniable. My experience building an ML anomaly detection model achieving <span class="research-kw">91% precision</span> at Pensive Global Consult, and constructing forecasting pipelines at TheBoardroom Africa that improved prediction accuracy by 35%, established a strong foundation for applying these methods at the supply chain level.
-        </p>
-        <p>
-          I am interested in <span class="research-kw">early-warning ML systems</span> that continuously monitor supply chain health — tracking lead time variance, supplier reliability scores, port congestion indicators, and macroeconomic signals — and surface actionable alerts before disruptions propagate downstream. The critical research challenge is building models that remain calibrated as the distribution of disruption events shifts, which is precisely the adaptive learning problem my thesis work began to address.
-        </p>
-        <div class="research-future">
-          <div class="research-future-label">Future directions</div>
-          <ul class="research-future-list">
-            <li>Supplier risk scoring using NLP on trade data, news feeds, and shipping records</li>
-            <li>Demand forecasting under structural breaks caused by geopolitical or climate events</li>
-            <li>Graph neural networks for modeling cascading failure across multi-tier supplier networks</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- DIRECTION 3 -->
-      <div class="research-block">
-        <h3 class="research-block-title">Intelligent Data Pipelines for Trade Operations</h3>
-        <p>
-          Logistics organizations generate enormous volumes of operational data — from warehouse management systems, IoT sensors, ERP platforms, customs documentation, and carrier APIs — that sit in silos, arrive late, or require manual reconciliation before they can be used. My production experience building optimized data pipelines at Phrontlyne Technologies, reducing retrieval latency by 1.8 seconds and reporting time by 50%, and deploying ERP systems configured for IFRS 17 compliance, gave me direct insight into how <span class="research-kw">data infrastructure quality determines the ceiling of any analytical or AI capability built on top of it</span>.
-        </p>
-        <p>
-          I am interested in the design of real-time data integration architectures for trade operations — systems that ingest, clean, and route operational signals fast enough for ML models to act on them, not just analyze them after the fact. The research question is not just "what can we predict?" but "can we deliver that prediction in time for it to change a decision?"
-        </p>
-      </div>
-
-    </div><!-- /research-body -->
-  </div><!-- /research-layout -->
 </section>
 
 <!-- ===================== SERVICES ===================== -->
 <section id="services">
   <div class="section-header fade-up">
-    <span class="section-num">04 —</span>
+    <span class="section-num">03 —</span>
     <h2 class="section-title">Services</h2>
   </div>
 
@@ -342,10 +237,10 @@
     <div class="service-card">
       <div class="service-icon">02 · Analytics</div>
       <div class="service-title">Dashboard & BI Development</div>
-      <div class="service-desc">Interactive dashboards and business intelligence reports that surface the right metrics at the right time — cutting reporting overhead and accelerating decisions.</div>
+      <div class="service-desc">Interactive dashboards and BI reports that surface the right metrics at the right time — cutting reporting overhead and accelerating decisions.</div>
       <ul class="service-stack">
         <li>Power BI · Tableau</li>
-        <li>Custom JS/Chart.js dashboards</li>
+        <li>Custom JS / Chart.js dashboards</li>
         <li>KPI design & metric frameworks</li>
         <li>Automated reporting pipelines</li>
       </ul>
@@ -354,7 +249,7 @@
     <div class="service-card">
       <div class="service-icon">03 · Machine Learning</div>
       <div class="service-title">ML Model Development & Deployment</div>
-      <div class="service-desc">Predictive models, anomaly detection systems, and forecasting pipelines built for production — not just notebooks. From exploratory analysis through to deployed inference.</div>
+      <div class="service-desc">Predictive models, anomaly detection systems, and forecasting pipelines built for production — from exploratory analysis through to deployed inference.</div>
       <ul class="service-stack">
         <li>Scikit-learn · Pandas · NumPy</li>
         <li>Anomaly detection · Forecasting</li>
@@ -366,7 +261,7 @@
     <div class="service-card">
       <div class="service-icon">04 · Data Strategy</div>
       <div class="service-title">Data Audit & Architecture Consulting</div>
-      <div class="service-desc">Assessment of existing data infrastructure, identification of bottlenecks and inefficiencies, and a clear roadmap for scalable, analytics-ready architecture.</div>
+      <div class="service-desc">Assessment of existing data infrastructure, identification of bottlenecks, and a clear roadmap for scalable, analytics-ready architecture.</div>
       <ul class="service-stack">
         <li>Data infrastructure review</li>
         <li>ERP system configuration (IFRS 17)</li>
@@ -378,10 +273,10 @@
     <div class="service-card">
       <div class="service-icon">05 · Exploration</div>
       <div class="service-title">Exploratory Data Analysis & Insights</div>
-      <div class="service-desc">Deep-dive analysis of your datasets to uncover trends, anomalies, and opportunities. Delivered as clean reports with clear, actionable findings.</div>
+      <div class="service-desc">Deep-dive analysis of your datasets to uncover trends, anomalies, and opportunities. Delivered as clean reports with actionable findings.</div>
       <ul class="service-stack">
         <li>Statistical analysis · EDA</li>
-        <li>Python · Pandas · Seaborn</li>
+        <li>Python · Pandas · Seaborn · Matplotlib</li>
         <li>Segmentation & cohort analysis</li>
         <li>Written insights reports</li>
       </ul>
@@ -390,7 +285,7 @@
     <div class="service-card">
       <div class="service-icon">06 · Supply Chain</div>
       <div class="service-title">Logistics & Supply Chain Analytics</div>
-      <div class="service-desc">Applying ML and optimization to trade and logistics operations — demand forecasting, route analysis, supplier risk scoring, and operational KPI monitoring.</div>
+      <div class="service-desc">Applying ML and optimization to trade and logistics — demand forecasting, route analysis, supplier risk scoring, and operational KPI monitoring.</div>
       <ul class="service-stack">
         <li>Demand forecasting models</li>
         <li>Anomaly & risk detection</li>
@@ -401,25 +296,11 @@
 
   </div>
 
-  <div class="services-cta fade-up">
-    <p>Have a project in mind? I'm open to freelance work, short-term contracts, and research collaborations. Let's scope it out.</p>
-    <a href="#contact" class="btn-primary">Start a conversation</a>
-  </div>
-
-</section>
-
-<!-- ===================== SKILLS ===================== -->
-<section id="skills">
-  <div class="section-header fade-up">
-    <span class="section-num">05 —</span>
-    <h2 class="section-title">Skills</h2>
-  </div>
-  <div class="skills-layout fade-up">
-    <div class="skills-intro">
-      <p>A full-stack data practitioner — equally comfortable wrangling raw data, building production pipelines, and communicating insights through compelling visualizations.</p>
-    </div>
+  <!-- Skills embedded under services -->
+  <div class="skills-block fade-up">
+    <div class="skills-block-label">Core Stack</div>
     <div class="skills-groups">
-      <div>
+      <div class="skill-group">
         <div class="skill-group-label">Languages & Libraries</div>
         <div class="skill-tags">
           <span class="skill-tag featured">Python</span>
@@ -432,7 +313,7 @@
           <span class="skill-tag">React Native</span>
         </div>
       </div>
-      <div>
+      <div class="skill-group">
         <div class="skill-group-label">Databases & Infrastructure</div>
         <div class="skill-tags">
           <span class="skill-tag featured">MySQL</span>
@@ -444,22 +325,24 @@
           <span class="skill-tag">Git</span>
         </div>
       </div>
-      <div>
+      <div class="skill-group">
         <div class="skill-group-label">Visualisation & BI</div>
         <div class="skill-tags">
           <span class="skill-tag featured">Power BI</span>
           <span class="skill-tag">Tableau</span>
           <span class="skill-tag">Excel</span>
+          <span class="skill-tag">Chart.js</span>
         </div>
       </div>
     </div>
   </div>
+
 </section>
 
 <!-- ===================== EDUCATION ===================== -->
 <section id="education">
   <div class="section-header fade-up">
-    <span class="section-num">06 —</span>
+    <span class="section-num">04 —</span>
     <h2 class="section-title">Education</h2>
   </div>
   <div class="edu-grid fade-up">
@@ -484,20 +367,14 @@
       <div class="edu-period">June 2021</div>
     </div>
   </div>
-</section>
 
-<!-- ===================== VOLUNTEER ===================== -->
-<section id="community">
-  <div class="section-header fade-up">
-    <span class="section-num">07 —</span>
-    <h2 class="section-title">Community</h2>
-  </div>
-  <div class="volunteer-card fade-up">
+  <!-- Community folded under education -->
+  <div class="volunteer-card fade-up" style="margin-top: 1px;">
     <div class="vol-title">Volunteer</div>
     <div class="vol-org">Benaks Humanitarian Organization · Sep 2022 – Present</div>
     <ul class="vol-items">
       <li>Teaching basic IT skills to students at Adenkrebi school in the Eastern Region of Ghana.</li>
-      <li>Teaching vocational skills — barbering and soap making — to teenagers in the junior correctional centre, helping them develop marketable life skills.</li>
+      <li>Teaching vocational skills — barbering and soap making — to teenagers in the junior correctional centre.</li>
     </ul>
   </div>
 </section>
